@@ -1,26 +1,30 @@
-import {Component} from '@angular/core';
-import {AngularFireModule} from 'angularfire2';
-import {AngularFireDatabase} from 'angularfire2/database';
-import {Observable} from 'rxjs';
+import { Component, OnInit } from '@angular/core';
+// import { Fi } from 'angularfire2';
+import { AngularFireDatabase } from 'angularfire2/database';
+
+import { Observable } from 'rxjs';
+import {error} from 'selenium-webdriver';
+import {FirebaseListObservable} from 'angularfire2/database-deprecated';
+
+import {map} from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent {
-  title = 'app';
-  cuisine: Observable<any[]>;
 
-  itemValue = '';
-  items: Observable<any[]> = new Observable<any[]>();
+export class AppComponent implements OnInit {
+  // title = 'app';
+  // itemValue = '';
+  //
+  // items: Observable<any[]> = new Observable<any[]>();
+  // user;
 
-  constructor(public db: AngularFireDatabase) {
-    this.items = db.list('/data').valueChanges();
-    // db.list('/data').valueChanges().subscribe(x => {
-    //   this.items = x;
-    //   console.log('#', x);
-    // });
+  cuisines: Observable<any[]> = new Observable<any[]>();
+  restaurants: Observable<any[]> = new Observable<any[]>();
+
+  constructor(private db: AngularFireDatabase) {
   }
 
   // onSubmit() {
@@ -28,14 +32,48 @@ export class AppComponent {
   //   this.itemValue = '';
   // }
 
-  // constructor(public db: AngularFireDatabase) {
-  //   console.log(db);
-  //
-  //   this.cuisine = db.list('/cuisine').valueChanges();
-  //
-  //     console.log(this.cuisine);
-  //   // db.list('/cuisine').subscribe(x => {
-  //   //   this.cuisine = x;
-  //   // });
+  ngOnInit() {
+    // this.items = this.db.list('/data').valueChanges();
+    // this.user = this.db.object('/user').valueChanges();
+
+    this.cuisines = this.db.list('/cuisines')
+      .valueChanges();
+
+    this.restaurants = this.db.list('/restaurants')
+      .valueChanges()
+      .pipe(
+        map(restaurants => {
+          console.log('Before map', restaurants);
+          restaurants.map((restaurant: any) => {
+            restaurant.cuisineType = this.db.object('/cuisines/' + restaurant.cuisine).valueChanges();
+            this.db.object('/cuisines/' + restaurant.cuisine)
+              .valueChanges()
+              .subscribe(
+                item => console.log('######', item)
+              );
+          });
+          console.log('After map', restaurants);
+
+          return restaurants;
+        })
+      );
+
+  }
+
+  // onAdd() {
+  //   this.db.list('/data').push({ name: 'www'});
   // }
+  //
+  // onUpdate() {
+  //   this.db.object('/user').set({ name: 'www2'});
+  //   // this.db.object('/favorite/1/10').set({ name: 'www1'});
+  //   this.db.object('/favorite/1/10').set(null);
+  // }
+  //
+  // onRemove() {
+  //   this.db.object('/user').remove()
+  //     .then(x => console.log('SUCCESS'))
+  //     .catch(errors => console.log('ERROR', errors));
+  // }
+
 }
